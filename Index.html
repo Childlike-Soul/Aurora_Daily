@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <title>YouTube Daily Index</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2em;
+      display: flex;
+      gap: 2em;
+    }
+    #calendar-container {
+      flex: 1;
+    }
+    #calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.25em;
+      margin-top: 1em;
+    }
+    .day {
+      padding: 0.5em;
+      text-align: center;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .day:hover {
+      background-color: #eee;
+    }
+    .inactive {
+      color: #aaa;
+      pointer-events: none;
+    }
+    #month-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #month-header button {
+      padding: 0.25em 0.5em;
+    }
+    #viewer {
+      flex: 2;
+      border: 1px solid #ccc;
+      padding: 1em;
+      height: 80vh;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="calendar-container">
+    <h1>YouTube Daily Index</h1>
+    <div id="month-header">
+      <button id="prev-month">◀</button>
+      <h2 id="month-label"></h2>
+      <button id="next-month">▶</button>
+    </div>
+    <div id="calendar"></div>
+  </div>
+
+  <div id="viewer">
+    <iframe id="preview" src=""></iframe>
+  </div>
+
+  <script>
+    const previewEl = document.getElementById('preview');
+    const calendarEl = document.getElementById('calendar');
+    const monthLabel = document.getElementById('month-label');
+    const prevBtn = document.getElementById('prev-month');
+    const nextBtn = document.getElementById('next-month');
+
+    const months = [
+      'januar', 'februar', 'mars', 'april', 'mai', 'juni',
+      'juli', 'august', 'september', 'oktober', 'november', 'desember'
+    ];
+
+    const startDate = new Date('2025-06-20');
+    const days = 365;
+    const availableDates = new Set();
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      availableDates.add(toLocalISODate(date));
+    }
+
+    let current = new Date();
+    current.setDate(1);
+
+    function toLocalISODate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function renderCalendar() {
+      calendarEl.innerHTML = '';
+      const year = current.getFullYear();
+      const month = current.getMonth();
+
+      monthLabel.textContent = `${months[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      // Juster offset for mandag-start (0=søndag, så forskyv)
+      const offset = firstDay === 0 ? 6 : firstDay - 1;
+      for (let i = 0; i < offset; i++) {
+        const empty = document.createElement('div');
+        calendarEl.appendChild(empty);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const iso = toLocalISODate(date);
+
+        const div = document.createElement('div');
+        div.className = 'day';
+        div.textContent = day;
+
+        if (!availableDates.has(iso)) {
+          div.classList.add('inactive');
+        } else {
+          div.addEventListener('click', () => {
+            const [y, m, d] = iso.split('-');
+            const file = `${y}-${m}-${d}_YouTubeDaily.html`;
+            previewEl.src = file;
+          });
+        }
+
+        calendarEl.appendChild(div);
+      }
+    }
+
+    prevBtn.addEventListener('click', () => {
+      current.setMonth(current.getMonth() - 1);
+      renderCalendar();
+    });
+
+    nextBtn.addEventListener('click', () => {
+      current.setMonth(current.getMonth() + 1);
+      renderCalendar();
+    });
+
+    renderCalendar();
+  </script>
+</body>
+</html>
